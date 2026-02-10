@@ -207,9 +207,9 @@ float batteryVoltage() {
 
 int getBatteryPercentage() {
   float voltage = batteryVoltage();
-  if(voltage >= 4.2) return 100;
-  else if(voltage <= 3.0) return 0;
-  else return (int)((voltage - 3.0) / (4.2 - 3.0) * 100);
+  if(voltage >= 4.0) return 100;
+  else if(voltage <= 2.8) return 0;
+  else return (int)((voltage - 2.8) / (4.0 - 2.8) * 100);
 }
 
 void enterDeepSleep() {
