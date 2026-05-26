@@ -27,6 +27,7 @@ static const unsigned long BATTERY_REPORT_INTERVAL = 10 * 60 * 1000; // 10 minut
 static unsigned long lastActivityTime = 0;
 static unsigned long buttonPressedTime = 0;
 static bool wasButtonPressed = false;
+static bool wasConnected = false;
 
 void initNunchuk(void);
 char decodeNunchukData (char x);
@@ -89,15 +90,19 @@ void loop() {
     enterDeepSleep();
   }
   
-  // Report battery percentage every 10 minutes
-  if(bleMouse.isConnected() && (currentTime - lastBatteryReportTime >= BATTERY_REPORT_INTERVAL)) {
-    // Send battery percentage via HID report
-    // Note: BleMouse sends this as a special HID report
-    bleMouse.setBatteryLevel(getBatteryPercentage());
-    lastBatteryReportTime = currentTime;
-  }
-  
   if(bleMouse.isConnected()){
+    // Detect new BLE connection and send battery level immediately
+    if(!wasConnected) {
+      wasConnected = true;
+      bleMouse.setBatteryLevel(getBatteryPercentage());
+      lastBatteryReportTime = currentTime;
+    }
+    
+    // Report battery percentage every 10 minutes
+    if(currentTime - lastBatteryReportTime >= BATTERY_REPORT_INTERVAL) {
+      bleMouse.setBatteryLevel(getBatteryPercentage());
+      lastBatteryReportTime = currentTime;
+    }
     if(nunchuckIsAvailable(&x, &y, &button) ){
       int xPosi = x - initXposi;
       int yPosi = y - initYposi;
@@ -167,7 +172,9 @@ void loop() {
     delay(10);
   }
   else {
-    // BLE not connected - sleep longer to save power
+    // BLE not connected - reset connection flag
+    wasConnected = false;
+    // Sleep longer to save power
     delay(BLE_DISCONNECTED_SLEEP_TIME);
   }
 }
