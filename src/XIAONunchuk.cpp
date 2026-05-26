@@ -2,6 +2,8 @@
 #include <Wire.h>
 #include <BleMouse.h>
 #include <esp_sleep.h>
+#include <esp_pm.h>
+#include <driver/rtc_io.h>
 
 BleMouse bleMouse("Bluetooth Nunchuk Mouse", "Created by yyya_nico");
 
@@ -13,6 +15,7 @@ BleMouse bleMouse("Bluetooth Nunchuk Mouse", "Created by yyya_nico");
 #define WAKEUP_BUTTON_PIN D3
 #define INACTIVITY_TIMEOUT (10 * 60 * 1000)  // 10 minutes
 #define BUTTON_DELAY_TIME 1000  // 1 second
+#define BLE_DISCONNECTED_SLEEP_TIME 100  // 100ms sleep when BLE disconnected
 
 static int initXposi = 0;
 static int initYposi = 0;
@@ -37,6 +40,14 @@ void setup() {
   
   // Configure GPIO wakeup (wake on LOW - button pushed)
   esp_deep_sleep_enable_gpio_wakeup(BIT(WAKEUP_BUTTON_PIN), ESP_GPIO_WAKEUP_GPIO_LOW);
+  
+  // Enable automatic light sleep
+  esp_pm_config_esp32c3_t pm_config = {
+    .max_freq_mhz = 80,
+    .min_freq_mhz = 10,
+    .light_sleep_enable = true
+  };
+  esp_pm_configure(&pm_config);
   
   bleMouse.begin();
   bleMouse.setBatteryLevel(getBatteryPercentage());
@@ -140,8 +151,12 @@ void loop() {
     else {
       bleMouse.release(MOUSE_ALL);
     }
+    delay(10);
   }
-  delay(10);
+  else {
+    // BLE not connected - sleep longer to save power
+    delay(BLE_DISCONNECTED_SLEEP_TIME);
+  }
 }
 
 void initNunchuk(void) {
@@ -198,10 +213,10 @@ void getInitPosition(int *x, int *y, uint8_t *button)
 
 float batteryVoltage() {
   uint32_t Vbatt = 0;
-  for(int i = 0; i < 16; i++) {
+  for(int i = 0; i < 8; i++) {
     Vbatt = Vbatt + analogReadMilliVolts(A0); // ADC with correction   
   }
-  float Vbattf = 2 * Vbatt / 16 / 1000.0;     // attenuation ratio 1/2, mV --> V
+  float Vbattf = 2 * Vbatt / 8 / 1000.0;     // attenuation ratio 1/2, mV --> V
   return Vbattf;
 }
 
