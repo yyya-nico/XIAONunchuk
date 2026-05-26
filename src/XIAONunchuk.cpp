@@ -25,6 +25,8 @@ static bool disableScroll = false;
 static unsigned long lastBatteryReportTime = 0;
 static const unsigned long BATTERY_REPORT_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
 static unsigned long lastActivityTime = 0;
+static unsigned long buttonPressedTime = 0;
+static bool wasButtonPressed = false;
 
 void initNunchuk(void);
 char decodeNunchukData (char x);
@@ -65,10 +67,21 @@ void loop() {
   
   // Check D3 button for deep sleep
   bool currentButtonState = (digitalRead(WAKEUP_BUTTON_PIN) == LOW);
-  if(currentButtonState && (currentTime - lastActivityTime > BUTTON_DELAY_TIME)) {
-    // Button just pushed, wait and enter deep sleep
-    delay(BUTTON_DELAY_TIME); // Debounce delay
-    enterDeepSleep();
+  
+  if(currentButtonState) {
+    if(!wasButtonPressed) {
+      // Button just pressed, record the time
+      buttonPressedTime = currentTime;
+      wasButtonPressed = true;
+    }
+    else if(currentTime - buttonPressedTime >= BUTTON_DELAY_TIME) {
+      // Button held for required duration, enter deep sleep
+      enterDeepSleep();
+    }
+  }
+  else {
+    // Button released, reset the flag
+    wasButtonPressed = false;
   }
   
   // Check inactivity timeout
