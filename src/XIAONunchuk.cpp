@@ -14,6 +14,7 @@ BleMouse bleMouse("Bluetooth Nunchuk Mouse", "Created by yyya_nico");
 #define POSITION_MARGIN 5
 #define WAKEUP_BUTTON_PIN D3
 #define INACTIVITY_TIMEOUT (10 * 60 * 1000)  // 10 minutes
+#define BUTTON_DELAY_TIME 1000  // 1 second
 #define BLE_DISCONNECTED_SLEEP_TIME 100  // 100ms sleep when BLE disconnected
 
 static int initXposi = 0;
@@ -25,6 +26,7 @@ static unsigned long lastBatteryReportTime = 0;
 static const unsigned long BATTERY_REPORT_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
 static unsigned long lastActivityTime = 0;
 static unsigned long buttonPressedTime = 0;
+static bool wasButtonPressed = false;
 static float accumulatedX = 0.0;
 static float accumulatedY = 0.0;
 
@@ -69,12 +71,19 @@ void loop() {
   bool currentButtonState = (digitalRead(WAKEUP_BUTTON_PIN) == LOW);
   
   if(currentButtonState) {
-    // Wait for button release before entering deep sleep
-    while(digitalRead(WAKEUP_BUTTON_PIN) == LOW) {
-      delay(10);
+    if(!wasButtonPressed) {
+      // Button just pressed, record the time
+      buttonPressedTime = currentTime;
+      wasButtonPressed = true;
     }
-    delay(50);  // デバウンス用の短い待機
-    enterDeepSleep();
+    else if(currentTime - buttonPressedTime >= BUTTON_DELAY_TIME) {
+      // Button held for required duration, enter deep sleep
+      enterDeepSleep();
+    }
+  }
+  else {
+    // Button released, reset the flag
+    wasButtonPressed = false;
   }
   
   // Check inactivity timeout
@@ -254,6 +263,12 @@ void enterDeepSleep() {
   // Release all mouse buttons before sleep
   bleMouse.release(MOUSE_ALL);
   delay(100);
+  
+  // Wait for button release before entering deep sleep
+  while(digitalRead(WAKEUP_BUTTON_PIN) == LOW) {
+    delay(10);
+  }
+  delay(50);  // デバウンス用の短い待機
   
   // Disconnect BLE
   // bleMouse.end();
