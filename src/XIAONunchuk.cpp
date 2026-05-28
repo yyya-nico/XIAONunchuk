@@ -27,8 +27,6 @@ static const unsigned long BATTERY_REPORT_INTERVAL = 10 * 60 * 1000; // 10 minut
 static unsigned long lastActivityTime = 0;
 static unsigned long buttonPressedTime = 0;
 static bool wasButtonPressed = false;
-static float accumulatedX = 0.0;
-static float accumulatedY = 0.0;
 
 void initNunchuk(void);
 char decodeNunchukData (char x);
@@ -105,12 +103,12 @@ void loop() {
       int yPosi = y - initYposi;
 
       if(button & NUNCHK_C_MASK) { // c button
-        if(intervalCount >= 1000/5) {
+        if(intervalCount >= 1000/2) {
           bleMouse.press(MOUSE_RIGHT);
           intervalCount = 0;
           disableCount = true;
           disableScroll = true;
-          delay(5);
+          delay(2);
           bleMouse.release(MOUSE_RIGHT);
         }
         else {
@@ -143,27 +141,10 @@ void loop() {
       }
       else {
         if(abs(xPosi) > POSITION_MARGIN || abs(yPosi) > POSITION_MARGIN) {
-          // Accumulate fractional movement for smoother cursor motion
-          accumulatedX += (float)xPosi * 50.0 / 127.0;
-          accumulatedY -= (float)yPosi * 50.0 / 127.0;
-          
-          // Extract integer part for movement
-          signed char moveX = (signed char)accumulatedX;
-          signed char moveY = (signed char)accumulatedY;
-          
-          if(moveX != 0 || moveY != 0) {
-            bleMouse.move(moveX, moveY); // stick position x y
-            accumulatedX -= moveX;
-            accumulatedY -= moveY;
-          }
+          bleMouse.move((signed char)(xPosi)*50/127, -(signed char)(yPosi)*50/127); // stick position x y
       
           // Update last activity time on any input
           lastActivityTime = currentTime;
-        }
-        else {
-          // Reset accumulation when within dead zone
-          accumulatedX = 0.0;
-          accumulatedY = 0.0;
         }
         intervalCount = 0;
         disableCount = false;
@@ -183,7 +164,7 @@ void loop() {
     else {
       bleMouse.release(MOUSE_ALL);
     }
-    delay(5);
+    delay(2);
   }
   else {
     // BLE not connected - sleep longer to save power
