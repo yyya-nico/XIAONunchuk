@@ -105,12 +105,12 @@ void loop() {
       int yPosi = y - initYposi;
 
       if(button & NUNCHK_C_MASK) { // c button
-        if(intervalCount >= 1000/2) {
+        if(intervalCount >= 1000/5) {
           bleMouse.press(MOUSE_RIGHT);
           intervalCount = 0;
           disableCount = true;
           disableScroll = true;
-          delay(2);
+          delay(5);
           bleMouse.release(MOUSE_RIGHT);
         }
         else {
@@ -144,8 +144,8 @@ void loop() {
       else {
         if(abs(xPosi) > POSITION_MARGIN || abs(yPosi) > POSITION_MARGIN) {
           // Accumulate fractional movement for smoother cursor motion
-          accumulatedX += (float)xPosi * 25.0 / 127.0;
-          accumulatedY -= (float)yPosi * 25.0 / 127.0;
+          accumulatedX += (float)xPosi * 50.0 / 127.0;
+          accumulatedY -= (float)yPosi * 50.0 / 127.0;
           
           // Extract integer part for movement
           signed char moveX = (signed char)accumulatedX;
@@ -183,7 +183,7 @@ void loop() {
     else {
       bleMouse.release(MOUSE_ALL);
     }
-    delay(2);
+    delay(5);
   }
   else {
     // BLE not connected - sleep longer to save power
