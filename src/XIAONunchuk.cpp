@@ -103,12 +103,12 @@ void loop() {
       int yPosi = y - initYposi;
 
       if(button & NUNCHK_C_MASK) { // c button
-        if(intervalCount >= 1000/2) {
+        if(intervalCount >= 1000/5) {
           bleMouse.press(MOUSE_RIGHT);
           intervalCount = 0;
           disableCount = true;
           disableScroll = true;
-          delay(2);
+          delay(5);
           bleMouse.release(MOUSE_RIGHT);
         }
         else {
@@ -141,7 +141,9 @@ void loop() {
       }
       else {
         if(abs(xPosi) > POSITION_MARGIN || abs(yPosi) > POSITION_MARGIN) {
-          bleMouse.move((signed char)(xPosi)*50/127, -(signed char)(yPosi)*50/127); // stick position x y
+          int moveX = (signed char)(xPosi) * 50 / 127;
+          int moveY = -(signed char)(yPosi) * 50 / 127;
+          bleMouse.move(moveX, moveY); // stick position x y
       
           // Update last activity time on any input
           lastActivityTime = currentTime;
@@ -164,7 +166,7 @@ void loop() {
     else {
       bleMouse.release(MOUSE_ALL);
     }
-    delay(2);
+    delay(5);
   }
   else {
     // BLE not connected - sleep longer to save power
