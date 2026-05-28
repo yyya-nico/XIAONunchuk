@@ -264,6 +264,12 @@ void enterDeepSleep() {
   bleMouse.release(MOUSE_ALL);
   delay(100);
   
+  // Wait for button release before entering deep sleep
+  while(digitalRead(WAKEUP_BUTTON_PIN) == LOW) {
+    delay(10);
+  }
+  delay(50);  // デバウンス用の短い待機
+  
   // Disconnect BLE
   // bleMouse.end();
   // delay(100);
